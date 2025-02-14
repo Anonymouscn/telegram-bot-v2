@@ -16,3 +16,6 @@
 application.yml
 deploy.sh
 .env.dev
+
+*.pyc
+__pycache__
