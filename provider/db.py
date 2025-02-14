@@ -1,0 +1,15 @@
+import os
+
+from db.engine import DBSessionManager
+
+env = os.environ
+TelegramBotDBManager: DBSessionManager | None = None
+
+
+def InitDB():
+    e = os.environ
+    global TelegramBotDBManager
+    TelegramBotDBManager = DBSessionManager(
+        core=int(e.get("TELEGRAM_DB_CORE_POOL_SIZE", "4")),
+        limit=int(e.get("TELEGRAM_DB_MAX_POOL_SIZE", "100"))
+    )
