@@ -9,6 +9,7 @@ from db.config import DBConfig
 
 
 def create_engine_from_config(config: DBConfig):
+    print(config.get_link())
     return create_engine(
         config.get_link(),
         echo=True,
