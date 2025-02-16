@@ -394,7 +394,7 @@ async def chatgpt_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return await new_chat(
         update,
         context,
-        ['/o1_preview', '/o1_mini', '/gpt_4o', '/gpt_4o_mini', '/gpt_3.5_turbo', '/gpt_3.5_turbo_16k'],
+        ['/o1_preview', '/o1_mini', '/gpt_4o', '/gpt_4o_mini', '/gpt_3_5_turbo', '/gpt_3_5_turbo_16k'],
         'ChatGPT'
     )
 
@@ -477,6 +477,8 @@ async def set_model(update: Update, context: ContextTypes.DEFAULT_TYPE, factory:
             get_with_lang('no_model_found_reply', user.language_code).
             replace('$model', model).
             replace('/', '').
+            # gpt: 3_5 -> 3.5
+            replace('3_5', '3.5').
             replace('_', '-')
         )
         for m in selectable_models:
