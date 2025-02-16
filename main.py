@@ -391,7 +391,12 @@ async def set_chat_name(
 
 
 async def chatgpt_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    return await new_chat(update, context, ['/gpt_4o', '/gpt_4o_mini', '/o1_preview', '/o1_mini'], 'ChatGPT')
+    return await new_chat(
+        update,
+        context,
+        ['/o1_preview', '/o1_mini', '/gpt_4o', '/gpt_4o_mini', 'gpt_3.5_turbo', 'gpt_3.5_turbo_16k'],
+        'ChatGPT'
+    )
 
 
 async def deepseek_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
