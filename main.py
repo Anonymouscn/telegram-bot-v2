@@ -507,11 +507,13 @@ async def deepseek_create_prompt(update: Update, context: ContextTypes.DEFAULT_T
 
 async def create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     user = update.message.from_user
-    model = (update.message.text.
-             replace("/", "").
-             # gpt: 3_5 -> 3.5
-             replace('3_5', '3.5').
-             replace("_", "-"))
+    model = (
+        update.message.text.
+        replace("/", "").
+        # gpt: 3_5 -> 3.5
+        replace('3_5', '3.5').
+        replace("_", "-")
+    )
     # 保存当前使用模型名称
     save_in_dict_chain(
         cursor,
