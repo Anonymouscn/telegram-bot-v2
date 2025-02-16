@@ -28,13 +28,19 @@ def get_session_id_by_name(user_id: int, name: str, factory: str):
             TelegramBotDBManager.return_session(session)
 
 
-def count_user_sessions(user_id: int, factory: str):
+def count_user_sessions(user_id: int, factory: str, search: str = None, offset: int = None):
     session = TelegramBotDBManager.borrow_session()
+    conditions = [
+        TSession.user_id == user_id,
+        TSession.factory == factory
+    ]
+    if search is not None and search != '':
+        conditions.append(TSession.name.like('%'+search+'%'))
     try:
-        return session.query(func.count(TSession.id)).filter(
-            TSession.user_id == user_id,
-            TSession.factory == factory
-        ).scalar()
+        result = session.query(func.count(TSession.id)).filter(*conditions).scalar()
+        if offset is not None and offset > 0:
+            result -= offset
+        return result
     finally:
         if session is not None:
             TelegramBotDBManager.return_session(session)
@@ -70,7 +76,7 @@ def get_session_by_name(user_id: int, name: str, factory: str):
 
 
 def batch_get_session_in_user_collection(
-        user_id_list: List[int], factory: str = None, model: str = None, limit: int = None) -> list[TSession]:
+        user_id_list: List[int], factory: str = None, model: str = None, limit: int = None, search: str = None, offset: int = None) -> list[TSession]:
     session = TelegramBotDBManager.borrow_session()
     conditions = []
     if factory is not None:
@@ -82,10 +88,14 @@ def batch_get_session_in_user_collection(
     else:
         if len(user_id_list) == 1:
             conditions.append(TSession.user_id == user_id_list[0])
+    if search is not None and search != '':
+        conditions.append(TSession.name.like('%'+search+'%'))
     try:
         query = session.query(TSession).filter(*conditions).order_by(desc(TSession.id))
         if limit is not None:
             query = query.limit(limit)
+        if offset is not None and offset != 0:
+            query = query.offset(offset)
         session_list = query.all()
         return session_list
     finally:

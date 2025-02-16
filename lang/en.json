@@ -1,6 +1,6 @@
 {
   "cancel_reply": "Bye! I hope we can talk again some day.",
-  "help_reply": "Anonymous X Bot is coming!\n\n/help View help\n/gpt Use chatGPT (supported)\n/deepseek Use DeepSeek (in support process)\n\n",
+  "help_reply": "\uD83E\uDD17Anonymous X Bot is coming!\n\n/help View help\n\n\uD83D\uDCACText generate:\n/gpt Use ChatGPT (supported)\n/deepseek Use DeepSeek (supported)\n/claude Use Claude (in support process)\n/gemini Use Gemini (in support process)\n/qwen Use QWen (in support process)\n/wenxin Use WenXin (in support process)\n\n\uD83D\uDDBC\uFE0FImage generate:\n/mj Use Midjourney (in support process)\n/sd Use Stable Diffusion (in support process)\n\n\uD83C\uDF9EVideo generate:\n/sora Use Sora (in support process)\n/gork Use Gork (in support process)\n/runway Use Runway (in support process)\n\nauthor: [anonymous](https://anonymous.net.cn)\n\n",
   "help_placeholder": "start to explore",
   "chat_start_reply": "Hi! Welcome to use $factory in Anonymous X !\nSend /cancel to stop talking to me.\n\n",
   "chat_start_placeholder": "next step",
@@ -16,9 +16,11 @@
   "chat_name_duplicate_reply": "Chat name already exists, please re-enter (only letters, numbers and underscores are supported).",
   "new_chat_select_model_reply": "Select a model to chat.\nSend /cancel to stop talking to me.\n\n",
   "new_chat_select_model_placeholder": "select model",
-  "select_history_reply": "Hi, you have came back to【$session】session. Continue to have fun !",
+  "select_history_reply": "Hi, you have came back to [$session] session. Continue to have fun !",
   "chat_placeholder": "chat",
   "create_prompt_reply": "Hello, I'm【$model】, you can ask me a question or chat to me !\nSend /cancel to stop talking to me.",
   "create_prompt_placeholder": "select model",
-  "server_error_reply": "Server error, please try again later."
+  "server_error_reply": "Server error, please try again later.",
+  "no_model_found_reply": "The model [$model] cannot be found. You can reselect the available model below and try it!\n\n",
+  "invalid_command_reply": "Sorry, invalid command, please try the following command again:\n\n"
 }

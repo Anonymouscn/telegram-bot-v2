@@ -1,5 +1,4 @@
 import os
-
 from db.engine import DBSessionManager
 
 env = os.environ
@@ -9,7 +8,7 @@ TelegramBotDBManager = DBSessionManager(
 )
 
 
-def InitDB():
+def init_db():
     e = os.environ
     global TelegramBotDBManager
     TelegramBotDBManager = DBSessionManager(
