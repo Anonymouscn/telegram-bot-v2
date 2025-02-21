@@ -72,6 +72,14 @@ async def deepseek_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return await cancel(update, context, 'DeepSeek')
 
 
+async def sc_net_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await cancel(update, context, 'SCNet')
+
+
+async def bytedance_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await cancel(update, context, 'ByteDance')
+
+
 # 取消操作
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     """Cancels and ends the conversation."""
@@ -102,6 +110,7 @@ async def readme(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         reply_markup=ReplyKeyboardMarkup(
             [
                 ['/gpt', '/deepseek', '/claude'],
+                ['/bytedance', '/sc'],
                 ['/gemini', '/qwen', '/wenxin'],
                 ['/mj', '/sd'],
                 ['/sora', '/gork', '/runway'],
@@ -123,6 +132,14 @@ async def chatgpt_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 # deepseek 开始切点
 async def deepseek_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await chat_start(update, context, 'DeepSeek')
+
+
+async def bytedance_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await chat_start(update, context, 'ByteDance')
+
+
+async def sc_net_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await chat_start(update, context, 'SCNet')
 
 
 # 开始切点
@@ -183,6 +200,14 @@ async def chatgpt_check_history(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def deepseek_check_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await check_history(update, context, 'DeepSeek')
+
+
+async def bytedance_check_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_history(update, context, 'ByteDance')
+
+
+async def sc_net_check_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_history(update, context, 'SCNet')
 
 
 # gpt 检查历史
@@ -256,6 +281,14 @@ async def deepseek_produce_history(update: Update, context: ContextTypes.DEFAULT
     return await produce_history(update, context, 'DeepSeek')
 
 
+async def bytedance_produce_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await produce_history(update, context, 'ByteDance')
+
+
+async def sc_net_produce_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await produce_history(update, context, 'SCNet')
+
+
 async def produce_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     user = update.message.from_user
     raw = update.message.text
@@ -305,6 +338,14 @@ async def deepseek_check_more_history(update: Update, context: ContextTypes.DEFA
     return await check_more_history(update, context, 'DeepSeek')
 
 
+async def bytedance_check_more_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_more_history(update, context, 'ByteDance')
+
+
+async def sc_net_check_more_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_more_history(update, context, 'SCNet')
+
+
 async def check_more_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     cmd = update.message.text
     user = update.message.from_user
@@ -321,6 +362,14 @@ async def chatgpt_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def deepseek_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await set_chat_name(update, context, 'DeepSeek', deepseek_new_chat)
+
+
+async def bytedance_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_chat_name(update, context, 'ByteDance', bytedance_new_chat)
+
+
+async def sc_net_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_chat_name(update, context, 'SCNet', sc_net_new_chat)
 
 
 # 设置聊天名
@@ -403,6 +452,24 @@ async def deepseek_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     return await new_chat(update, context, ['/deepseek_chat', '/deepseek_reasoner'], 'DeepSeek')
 
 
+async def bytedance_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await new_chat(
+        update,
+        context,
+        [
+            '/deepseek_v3', '/deepseek_r1',
+            '/deepseek_r1_qwen_32b', '/glm3_130b',
+            '/moonshot_32k', '/moonshot_128k',
+            '/doubao_1_5_pro_32k', '/doubao_1_5_pro_128k',
+        ],
+        'ByteDance'
+    )
+
+
+async def sc_net_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await new_chat(update, context, ['/DeepSeek_R1_Distill_Qwen_32B'], 'SCNet')
+
+
 # gpt 新建聊天
 async def new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE, models: list, factory: str) -> int:
     chat_name = update.message.text
@@ -437,6 +504,14 @@ async def deepseek_select_history(update: Update, context: ContextTypes.DEFAULT_
     return await select_history(update, context, 'DeepSeek')
 
 
+async def bytedance_select_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await select_history(update, context, 'ByteDance')
+
+
+async def sc_net_select_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await select_history(update, context, 'SCNet')
+
+
 async def select_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     session = update.message.text.replace("/", "")
     user = update.message.from_user
@@ -465,6 +540,14 @@ async def chatgpt_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 async def deepseek_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await set_model(update, context, 'DeepSeek', deepseek_create_prompt)
+
+
+async def bytedance_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_model(update, context, 'ByteDance', bytedance_create_prompt)
+
+
+async def sc_net_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_model(update, context, 'SCNet', sc_net_create_prompt)
 
 
 async def set_model(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str,
@@ -503,6 +586,14 @@ async def chatgpt_create_prompt(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def deepseek_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await create_prompt(update, context, 'DeepSeek')
+
+
+async def bytedance_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await create_prompt(update, context, 'ByteDance')
+
+
+async def sc_net_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await create_prompt(update, context, 'SCNet')
 
 
 async def create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
@@ -569,6 +660,7 @@ async def chatgpt_send_prompt_text(update: Update, context: ContextTypes.DEFAULT
             }
         }
         return payload
+
     return await send_prompt_text(update, context, 'ChatGPT', 'multiple', create_payload)
 
 
@@ -586,7 +678,44 @@ async def deepseek_send_prompt_text(update: Update, context: ContextTypes.DEFAUL
             }
         }
         return payload
+
     return await send_prompt_text(update, context, 'DeepSeek', 'default', create_payload)
+
+
+async def bytedance_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    def create_payload(messages: list, prompt: str, model: str) -> dict:
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        payload = {
+            "model_factory": "bytedance",
+            "model_payload": {
+                "model": model,
+                "messages": messages,
+            }
+        }
+        return payload
+
+    return await send_prompt_text(update, context, 'ByteDance', 'default', create_payload)
+
+
+async def sc_net_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    def create_payload(messages: list, prompt: str, model: str) -> dict:
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        payload = {
+            "model_factory": "sc_net",
+            "model_payload": {
+                "model": model,
+                "messages": messages,
+            }
+        }
+        return payload
+
+    return await send_prompt_text(update, context, 'SCNet', 'default', create_payload)
 
 
 async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str, msg_type: str,
@@ -731,6 +860,60 @@ def main() -> None:
         },
         fallbacks=[],
     )
+    # bytedance handler
+    bytedance_handler = ConversationHandler(
+        entry_points=[CommandHandler("bytedance", bytedance_start)],
+        states={
+            CHECK_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                            MessageHandler(filters.TEXT, bytedance_check_history)],
+            CONTINUE_LAST: [CommandHandler("cancel", bytedance_cancel),
+                            MessageHandler(filters.TEXT, bytedance_create_prompt)],
+            CHECK_MORE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                                 MessageHandler(filters.TEXT, bytedance_check_more_history)],
+            PRODUCE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                              MessageHandler(filters.TEXT, bytedance_produce_history)],
+            SELECT_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                             MessageHandler(filters.TEXT, bytedance_select_history)],
+            NEW_CHAT: [CommandHandler("cancel", bytedance_cancel),
+                       MessageHandler(filters.TEXT, bytedance_set_chat_name)],
+            SET_CHAT_NAME: [CommandHandler("cancel", bytedance_cancel),
+                            MessageHandler(filters.TEXT, bytedance_set_chat_name)],
+            SET_MODEL: [CommandHandler("cancel", bytedance_cancel),
+                        MessageHandler(filters.TEXT, bytedance_set_model)],
+            CREATE_PROMPT: [CommandHandler("cancel", bytedance_cancel),
+                            MessageHandler(filters.TEXT, bytedance_create_prompt)],
+            SEND_PROMPT_TEXT: [CommandHandler("cancel", bytedance_cancel),
+                               MessageHandler(filters.TEXT, bytedance_send_prompt_text)],
+        },
+        fallbacks=[],
+    )
+    # sc net handler
+    sc_net_handler = ConversationHandler(
+        entry_points=[CommandHandler("sc", sc_net_start)],
+        states={
+            CHECK_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                            MessageHandler(filters.TEXT, sc_net_check_history)],
+            CONTINUE_LAST: [CommandHandler("cancel", sc_net_cancel),
+                            MessageHandler(filters.TEXT, sc_net_create_prompt)],
+            CHECK_MORE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                                 MessageHandler(filters.TEXT, sc_net_check_more_history)],
+            PRODUCE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                              MessageHandler(filters.TEXT, sc_net_produce_history)],
+            SELECT_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                             MessageHandler(filters.TEXT, sc_net_select_history)],
+            NEW_CHAT: [CommandHandler("cancel", sc_net_cancel),
+                       MessageHandler(filters.TEXT, sc_net_set_chat_name)],
+            SET_CHAT_NAME: [CommandHandler("cancel", sc_net_cancel),
+                            MessageHandler(filters.TEXT, sc_net_set_chat_name)],
+            SET_MODEL: [CommandHandler("cancel", sc_net_cancel),
+                        MessageHandler(filters.TEXT, sc_net_set_model)],
+            CREATE_PROMPT: [CommandHandler("cancel", sc_net_cancel),
+                            MessageHandler(filters.TEXT, sc_net_create_prompt)],
+            SEND_PROMPT_TEXT: [CommandHandler("cancel", sc_net_cancel),
+                               MessageHandler(filters.TEXT, sc_net_send_prompt_text)],
+        },
+        fallbacks=[],
+    )
     # claude handler
     claude_handler = ConversationHandler(
         entry_points=[CommandHandler("claude", readme)],
@@ -789,6 +972,8 @@ def main() -> None:
     application.add_handler(help_handler)
     application.add_handler(gpt_handler)
     application.add_handler(deepseek_handler)
+    application.add_handler(bytedance_handler)
+    application.add_handler(sc_net_handler)
     application.add_handler(claude_handler)
     application.add_handler(gemini_handler)
     application.add_handler(qwen_handler)
