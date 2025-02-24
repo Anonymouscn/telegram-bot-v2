@@ -13,15 +13,16 @@ Send /start to initiate the conversation.
 Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
-import json
+import asyncio
 import logging
 import os
 import re
-import requests
 import numpy as np
+from datetime import datetime, timedelta
 from typing import Callable, Awaitable
 from md2tgmd import escape
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, Message
+from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -30,6 +31,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+
 from model.db.t_answer import TAnswer
 from model.db.t_question import TQuestion
 from model.db.t_session import TSession
@@ -44,6 +46,8 @@ from provider.db import init_db
 from util.dict_util import save_in_dict_chain
 from util.lang_util import init_lang, get_with_lang
 from util.value_util import set_or_default
+from util.http_stream_util import stream_events
+from multiprocessing import Value
 
 # cursor data cache
 cursor = {}
@@ -718,6 +722,130 @@ async def sc_net_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_
     return await send_prompt_text(update, context, 'SCNet', 'default', create_payload)
 
 
+# 保存事件流回复
+async def save_stream_answer(session_id, question_id, content, state: Value):
+    with state.get_lock():
+        if state.value == 0:
+            state.value += 1
+            answer = TAnswer(
+                session_id=session_id,
+                question_id=question_id,
+                type=0,
+                content=content,
+            )
+            batch_save_answer([answer])
+            print('saved content')
+
+
+# 发送响应 chunk 片段回调检查
+async def send_reply_chunk_cb(update: Update, context: ContextTypes.DEFAULT_TYPE,
+                              state: dict, lock, save):
+    window: timedelta = state['limit_window']
+    await asyncio.sleep(window.total_seconds())
+    now = datetime.now()
+    updated: datetime = state['last_update']
+    if updated.timestamp() < now.timestamp():
+        await send_reply_chunk(update, context, state, lock, save)
+
+
+# 发送响应 chunk 片段
+async def send_reply_chunk(update: Update, context: ContextTypes.DEFAULT_TYPE,
+                           state: dict, lock: asyncio.Lock, save: Value):
+    # 锁退避 (只有上锁成功才执行)
+    if await lock.acquire():
+        try:
+            if state['last_update'] is not None and (state['finish'] is None or not state['finish']):
+                now = datetime.now()
+                limit: datetime = state['last_update'] + state['limit_window']
+                if now.timestamp() < limit.timestamp():
+                    print('hit limit window, ignore')
+                    return
+            state['last_update'] = datetime.now()
+
+            chat_id = update.effective_chat.id
+            send_msg: Message = state['send_msg']
+            content = state['content']
+
+            if state['finish'] is None or not state['finish']:
+                if send_msg is None:
+                    state['send_msg'] = await context.bot.send_message(chat_id, text=content)
+                else:
+                    if state['save'] != state['content']:
+                        try:
+                            if len(state['content']) < 4096:
+                                await send_msg.edit_text(state['content'])
+                            else:
+                                await send_msg.edit_text(state['content'][-4096:])
+                        except BadRequest as e:
+                            if "specified new message content and reply markup are exactly the same as a current content" not in e.message:
+                                print('error on edit message: ', e.message)
+                        state['save'] = state['content']
+                if not state['finish']:
+                    asyncio.create_task(send_reply_chunk_cb(update, context, state, lock, save))
+            else:
+                session_id = state['session_id']
+                question_id = state['question_id']
+                asyncio.create_task(save_stream_answer(session_id, question_id, content, save))
+                if send_msg is None:
+                    state['send_msg'] = await context.bot.send_message(chat_id, text=content)
+                else:
+                    if state['save'] != state['content']:
+
+                        render_content: str = escape(state['content'])
+                        if len(render_content) < 4096:
+                            try:
+                                await send_msg.edit_text(
+                                    render_content,
+                                    parse_mode="MarkdownV2",
+                                )
+                            except BadRequest as e:
+                                if "specified new message content and reply markup are exactly the same as a current content" not in e.message:
+                                    print('error on edit message: ', e.message)
+                        else:
+                            content_buffer = []
+                            lines = render_content.splitlines(keepends=True)
+                            has_code_block = False
+                            line_cache = ''
+                            for line in lines:
+                                if "```" in line:
+                                    has_code_block = not has_code_block
+                                reserve = 6 if has_code_block else 0
+                                if len(line_cache) + len(line) + reserve < 4096:
+                                    line_cache += line
+                                else:
+                                    if has_code_block:
+                                        content_buffer.append(line_cache + '\n```')
+                                        line_cache = '```\n' + line
+                                    else:
+                                        content_buffer.append(line_cache)
+                                        line_cache = line
+                            if line_cache != '':
+                                content_buffer.append(line_cache)
+                            # 修改第 1 条消息
+                            try:
+                                await send_msg.edit_text(
+                                    content_buffer[0],
+                                    parse_mode="MarkdownV2",
+                                )
+                            except BadRequest as e:
+                                if "specified new message content and reply markup are exactly the same as a current content" not in e.message:
+                                    print('error on edit message: ', e.message)
+                            # 补发剩余消息
+                            for content in content_buffer[1:]:
+                                try:
+                                    await update.message.reply_text(
+                                        content,
+                                        parse_mode="MarkdownV2",
+                                    )
+                                except BadRequest:
+                                    await update.message.reply_text(
+                                        content,
+                                    )
+                        state['save'] = state['content']
+        finally:
+            lock.release()
+
+
 async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str, msg_type: str,
                            fn: Callable[[list, str, str], dict]) -> int:
     user = update.message.from_user
@@ -743,50 +871,81 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
     if latest_question is not None:
         save_in_dict_chain(cursor, latest_question.id, [user.id, factory, 'parent_id'])
     payload = fn(messages, prompt, model)
-    result = requests.post(
-        url="http://192.168.2.70:8080/service/model/chat",
-        data=json.dumps(payload)
-    ).json()
-    response = get_with_lang('server_error_reply', user.language_code)
-    if result is None or result['data'] is None:
-        print('error result: ', result)
-        response = get_with_lang('server_error_reply', user.language_code)
-    else:
-        if result['data']['choices'] is not None and len(result['data']['choices']) > 0:
-            response = result['data']['choices'][0]['message']['content']
-    current_answer = TAnswer(
-        session_id=session_id,
-        question_id=latest_question.id,
-        type=0,
-        content=response,
+    # 发起普通请求
+    # result = requests.post(
+    #     url="http://192.168.2.70:8080/service/model/chat",
+    #     data=json.dumps(payload)
+    # ).json()
+    # 发起流方式请求
+    payload['stream'] = True
+    print(payload)
+    await stream_events(
+        target="http://192.168.2.70:8080/service/model/chat",
+        body=payload,
+        on_receive=send_reply_chunk,
+        update=update,
+        context=context,
+        state={
+            # 回复完成情况
+            'finish': False,
+            # 回复内容缓存
+            'content': '',
+            # 上次更新时间
+            'last_update': None,
+            # 编辑期限流窗口
+            'limit_window': timedelta(seconds=1),
+            # 消息缓存
+            'send_msg': None,
+            # 已存储内容缓存
+            'save': '',
+            # 会话 id
+            'session_id': session_id,
+            # 问题 id
+            'question_id': latest_question.id,
+        },
+        save_lock=Value('i', 0),
     )
-    batch_save_answer([current_answer])
-    response_data = escape(response)
-    max_len = 4096
-    if len(response_data) > max_len:
-        for x in range(0, len(response_data), max_len):
-            await update.message.reply_text(
-                response_data[x:x + max_len],
-                reply_markup=ReplyKeyboardMarkup(
-                    [['/cancel']],
-                    resize_keyboard=True,
-                    is_persistent=True,
-                    one_time_keyboard=True,
-                    input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
-                ),
-            )
-    else:
-        await update.message.reply_text(
-            escape(response),
-            parse_mode="MarkdownV2",
-            reply_markup=ReplyKeyboardMarkup(
-                [['/cancel']],
-                resize_keyboard=True,
-                is_persistent=True,
-                one_time_keyboard=True,
-                input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
-            ),
-        )
+
+    # response = get_with_lang('server_error_reply', user.language_code)
+    # if result is None or result['data'] is None:
+    #     print('error result: ', result)
+    #     response = get_with_lang('server_error_reply', user.language_code)
+    # else:
+    #     if result['data']['choices'] is not None and len(result['data']['choices']) > 0:
+    #         response = result['data']['choices'][0]['message']['content']
+    # current_answer = TAnswer(
+    #     session_id=session_id,
+    #     question_id=latest_question.id,
+    #     type=0,
+    #     content=response,
+    # )
+    # batch_save_answer([current_answer])
+    # response_data = escape(response)
+    # max_len = 4096
+    # if len(response_data) > max_len:
+    #     for x in range(0, len(response_data), max_len):
+    #         await update.message.reply_text(
+    #             response_data[x:x + max_len],
+    #             reply_markup=ReplyKeyboardMarkup(
+    #                 [['/cancel']],
+    #                 resize_keyboard=True,
+    #                 is_persistent=True,
+    #                 one_time_keyboard=True,
+    #                 input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
+    #             ),
+    #         )
+    # else:
+    #     await update.message.reply_text(
+    #         escape(response),
+    #         parse_mode="MarkdownV2",
+    #         reply_markup=ReplyKeyboardMarkup(
+    #             [['/cancel']],
+    #             resize_keyboard=True,
+    #             is_persistent=True,
+    #             one_time_keyboard=True,
+    #             input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
+    #         ),
+    #     )
     return SEND_PROMPT_TEXT
 
 
