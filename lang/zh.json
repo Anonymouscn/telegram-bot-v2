@@ -1,6 +1,6 @@
 {
   "cancel_reply": "再见！希望有一天我们能再次交谈。",
-  "help_reply": "\uD83E\uDD17Anonymous X 机器人来了!\n\n/help 查看帮助\n\n\uD83D\uDCAC文本生成:\n/gpt 使用 ChatGPT (已支持)\n/deepseek 使用 DeepSeek (已支持)\n/bytedance 使用字节平台 (已支持)\n/sc 使用 SC Net 超算平台 (已支持)\n/claude 使用 Claude (正在支持)\n/gemini 使用 Gemini (正在支持)\n/qwen 使用 通义千问 (正在支持)\n/wenxin 使用 文心一言 (正在支持)\n\n\uD83D\uDDBC\uFE0F图像生成:\n/mj 使用 Midjourney (正在支持)\n/sd 使用 Stable Diffusion (正在支持)\n\n\uD83C\uDF9E视频生成:\n/sora 使用 Sora (正在支持)\n/gork 使用 Gork (正在支持)\n/runway 使用 Runway (正在支持)\n\n作者: [anonymous](https://anonymous.net.cn)\n\n",
+  "help_reply": "\uD83E\uDD17Anonymous X 机器人来了!\n\n/start 或者 /help 查看帮助\n\n\uD83D\uDCAC文本生成:\n/gpt 使用 ChatGPT (已支持)\n/deepseek 使用 DeepSeek (已支持)\n/bytedance 使用字节平台 (已支持)\n/sc 使用 SC Net 超算平台 (已支持)\n/claude 使用 Claude (正在支持)\n/gemini 使用 Gemini (正在支持)\n/qwen 使用 通义千问 (正在支持)\n/wenxin 使用 文心一言 (正在支持)\n\n\uD83D\uDDBC\uFE0F图像生成:\n/mj 使用 Midjourney (正在支持)\n/sd 使用 Stable Diffusion (正在支持)\n\n\uD83C\uDF9E视频生成:\n/sora 使用 Sora (正在支持)\n/gork 使用 Gork (正在支持)\n/runway 使用 Runway (正在支持)\n\n作者: [anonymous](https://anonymous.net.cn)\n\n",
   "help_placeholder": "开始探索",
   "chat_start_reply": "你好！欢迎在 Anonymous X 中使用 $factory ！\n发送 /cancel 停止聊天。\n\n",
   "chat_start_placeholder": "下一步",

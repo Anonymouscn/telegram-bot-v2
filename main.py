@@ -959,9 +959,9 @@ def main() -> None:
         exit(1)
     application = Application.builder().token(token).build()
 
-    # help handler
+    # start/help handler
     help_handler = ConversationHandler(
-        entry_points=[CommandHandler("help", readme)],
+        entry_points=[CommandHandler("help", readme), CommandHandler("start", readme)],
         states={},
         fallbacks=[],
     )
