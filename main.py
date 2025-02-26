@@ -1151,7 +1151,7 @@ async def mentioned(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(args)
     # 过滤非指定机器人的消息
     bot_name = context.bot.username
-    if len(args) == 0 or not args[0].startswith('@'+bot_name):
+    if len(args) == 0 or not args[0].startswith('@' + bot_name):
         return
 
     print(user.full_name + ' mention this bot')
@@ -1163,7 +1163,6 @@ async def mentioned(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for entry in entries:
                 if await entry.callback(update, context):
                     break
-
 
 
 # mention handler
