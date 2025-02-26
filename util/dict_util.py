@@ -21,6 +21,7 @@ def get_on_not_null(target: dict, key: any, default: any):
     return default
 
 
+# 按照链路自动化保存字典
 def save_in_dict_chain(target: dict, value: any, paths: list):
     if target is None or value is None or paths is None:
         return

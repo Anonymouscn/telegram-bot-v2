@@ -7,6 +7,7 @@ from multiprocessing import Value
 from util.lang_util import get_with_lang
 
 
+# 事件流处理
 async def stream_events(target: str, body: any, on_receive, on_error, update: Update,
                         context: ContextTypes.DEFAULT_TYPE, state,
                         lock: asyncio.Lock = asyncio.Lock(), save_lock: Value = Value('i', 0)):

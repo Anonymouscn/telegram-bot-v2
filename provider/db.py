@@ -8,6 +8,7 @@ TelegramBotDBManager = DBSessionManager(
 )
 
 
+# 初始化数据库
 def init_db():
     e = os.environ
     global TelegramBotDBManager

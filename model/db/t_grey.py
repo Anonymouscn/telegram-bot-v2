@@ -2,6 +2,7 @@ from model.db.t_base import Base
 from sqlalchemy import Column, Integer, DateTime, BigInteger
 
 
+# 灰度表
 class TAnswer(Base):
     __tablename__ = 't_grey'
 

@@ -1,9 +1,9 @@
 import datetime
-
 from model.db.t_base import Base
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 
 
+# 回复表
 class TAnswer(Base):
     __tablename__ = 't_answer'
 

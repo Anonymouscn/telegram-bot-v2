@@ -2,18 +2,6 @@
 # pylint: disable=unused-argument
 # This program is dedicated to the public domain under the CC0 license.
 
-"""
-First, a few callback functions are defined. Then, those functions are passed to
-the Application and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Example of a bot-user conversation using ConversationHandler.
-Send /start to initiate the conversation.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
 import asyncio
 import logging
 import os
@@ -30,7 +18,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
-    filters,
+    filters
 )
 from model.db.t_answer import TAnswer
 from model.db.t_question import TQuestion
@@ -102,8 +90,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: st
 
 # readme 说明/获取帮助
 async def readme(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Get help for """
+    # bot = context.bot
     user = update.message.from_user
+    # if user.id == bot.id:
+    #     return ConversationHandler.END
     logger.info(
         "User [id:%s, name:%s] ask for help.",
         user.id, user.full_name,
@@ -128,7 +118,7 @@ async def readme(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 
-# gpt 开始切点
+# chatgpt 开始切点
 async def chatgpt_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await chat_start(update, context, 'ChatGPT')
 
@@ -936,184 +926,257 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
     return SEND_PROMPT_TEXT
 
 
+# start/help handler
+help_handler = ConversationHandler(
+    entry_points=[CommandHandler("help", readme), CommandHandler("start", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# gpt handler
+gpt_handler = ConversationHandler(
+    entry_points=[CommandHandler("gpt", chatgpt_start)],  # 开始
+    states={
+        CHECK_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
+                        MessageHandler(filters.TEXT, chatgpt_check_history)],
+        CONTINUE_LAST: [CommandHandler("cancel", chatgpt_cancel),
+                        MessageHandler(filters.TEXT, chatgpt_create_prompt)],
+        CHECK_MORE_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
+                             MessageHandler(filters.TEXT, chatgpt_check_more_history)],
+        PRODUCE_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
+                          MessageHandler(filters.TEXT, chatgpt_produce_history)],
+        SELECT_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
+                         MessageHandler(filters.TEXT, chatgpt_select_history)],
+        NEW_CHAT: [CommandHandler("cancel", chatgpt_cancel),
+                   MessageHandler(filters.TEXT, chatgpt_new_chat)],
+        SET_CHAT_NAME: [CommandHandler("cancel", chatgpt_cancel),
+                        MessageHandler(filters.TEXT, chatgpt_set_chat_name)],
+        SET_MODEL: [CommandHandler("cancel", chatgpt_cancel),
+                    MessageHandler(filters.TEXT, chatgpt_set_model)],
+        CREATE_PROMPT: [CommandHandler("cancel", chatgpt_cancel),
+                        MessageHandler(filters.TEXT, chatgpt_create_prompt)],
+        SEND_PROMPT_TEXT: [CommandHandler("cancel", chatgpt_cancel),
+                           MessageHandler(filters.TEXT, chatgpt_send_prompt_text)],
+    },
+    fallbacks=[],
+)
+
+# deepseek handler
+deepseek_handler = ConversationHandler(
+    entry_points=[CommandHandler("deepseek", deepseek_start)],
+    states={
+        CHECK_HISTORY: [CommandHandler("cancel", deepseek_cancel),
+                        MessageHandler(filters.TEXT, deepseek_check_history)],
+        CONTINUE_LAST: [CommandHandler("cancel", deepseek_cancel),
+                        MessageHandler(filters.TEXT, deepseek_create_prompt)],
+        CHECK_MORE_HISTORY: [CommandHandler("cancel", deepseek_cancel),
+                             MessageHandler(filters.TEXT, deepseek_check_more_history)],
+        PRODUCE_HISTORY: [CommandHandler("cancel", deepseek_cancel),
+                          MessageHandler(filters.TEXT, deepseek_produce_history)],
+        SELECT_HISTORY: [CommandHandler("cancel", deepseek_cancel),
+                         MessageHandler(filters.TEXT, deepseek_select_history)],
+        NEW_CHAT: [CommandHandler("cancel", deepseek_cancel),
+                   MessageHandler(filters.TEXT, deepseek_set_chat_name)],
+        SET_CHAT_NAME: [CommandHandler("cancel", deepseek_cancel),
+                        MessageHandler(filters.TEXT, deepseek_set_chat_name)],
+        SET_MODEL: [CommandHandler("cancel", deepseek_cancel),
+                    MessageHandler(filters.TEXT, deepseek_set_model)],
+        CREATE_PROMPT: [CommandHandler("cancel", deepseek_cancel),
+                        MessageHandler(filters.TEXT, deepseek_create_prompt)],
+        SEND_PROMPT_TEXT: [CommandHandler("cancel", deepseek_cancel),
+                           MessageHandler(filters.TEXT, deepseek_send_prompt_text)],
+    },
+    fallbacks=[],
+)
+
+# bytedance handler
+bytedance_handler = ConversationHandler(
+    entry_points=[CommandHandler("bytedance", bytedance_start)],
+    states={
+        CHECK_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                        MessageHandler(filters.TEXT, bytedance_check_history)],
+        CONTINUE_LAST: [CommandHandler("cancel", bytedance_cancel),
+                        MessageHandler(filters.TEXT, bytedance_create_prompt)],
+        CHECK_MORE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                             MessageHandler(filters.TEXT, bytedance_check_more_history)],
+        PRODUCE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                          MessageHandler(filters.TEXT, bytedance_produce_history)],
+        SELECT_HISTORY: [CommandHandler("cancel", bytedance_cancel),
+                         MessageHandler(filters.TEXT, bytedance_select_history)],
+        NEW_CHAT: [CommandHandler("cancel", bytedance_cancel),
+                   MessageHandler(filters.TEXT, bytedance_set_chat_name)],
+        SET_CHAT_NAME: [CommandHandler("cancel", bytedance_cancel),
+                        MessageHandler(filters.TEXT, bytedance_set_chat_name)],
+        SET_MODEL: [CommandHandler("cancel", bytedance_cancel),
+                    MessageHandler(filters.TEXT, bytedance_set_model)],
+        CREATE_PROMPT: [CommandHandler("cancel", bytedance_cancel),
+                        MessageHandler(filters.TEXT, bytedance_create_prompt)],
+        SEND_PROMPT_TEXT: [CommandHandler("cancel", bytedance_cancel),
+                           MessageHandler(filters.TEXT, bytedance_send_prompt_text)],
+    },
+    fallbacks=[],
+)
+
+# sc net handler
+sc_net_handler = ConversationHandler(
+    entry_points=[CommandHandler("sc", sc_net_start)],
+    states={
+        CHECK_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                        MessageHandler(filters.TEXT, sc_net_check_history)],
+        CONTINUE_LAST: [CommandHandler("cancel", sc_net_cancel),
+                        MessageHandler(filters.TEXT, sc_net_create_prompt)],
+        CHECK_MORE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                             MessageHandler(filters.TEXT, sc_net_check_more_history)],
+        PRODUCE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                          MessageHandler(filters.TEXT, sc_net_produce_history)],
+        SELECT_HISTORY: [CommandHandler("cancel", sc_net_cancel),
+                         MessageHandler(filters.TEXT, sc_net_select_history)],
+        NEW_CHAT: [CommandHandler("cancel", sc_net_cancel),
+                   MessageHandler(filters.TEXT, sc_net_set_chat_name)],
+        SET_CHAT_NAME: [CommandHandler("cancel", sc_net_cancel),
+                        MessageHandler(filters.TEXT, sc_net_set_chat_name)],
+        SET_MODEL: [CommandHandler("cancel", sc_net_cancel),
+                    MessageHandler(filters.TEXT, sc_net_set_model)],
+        CREATE_PROMPT: [CommandHandler("cancel", sc_net_cancel),
+                        MessageHandler(filters.TEXT, sc_net_create_prompt)],
+        SEND_PROMPT_TEXT: [CommandHandler("cancel", sc_net_cancel),
+                           MessageHandler(filters.TEXT, sc_net_send_prompt_text)],
+    },
+    fallbacks=[],
+)
+
+# claude handler
+claude_handler = ConversationHandler(
+    entry_points=[CommandHandler("claude", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# gemini handler
+gemini_handler = ConversationHandler(
+    entry_points=[CommandHandler("gemini", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# 通义千问 handler
+qwen_handler = ConversationHandler(
+    entry_points=[CommandHandler("qwen", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# 文心一言 handler
+wenxin_handler = ConversationHandler(
+    entry_points=[CommandHandler("wenxin", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# midjourney handler
+midjourney_handler = ConversationHandler(
+    entry_points=[CommandHandler("mj", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# stable diffusion handler
+sd_handler = ConversationHandler(
+    entry_points=[CommandHandler("sd", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# sora handler
+sora_handler = ConversationHandler(
+    entry_points=[CommandHandler("sora", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# gork handler
+gork_handler = ConversationHandler(
+    entry_points=[CommandHandler("gork", readme)],
+    states={},
+    fallbacks=[],
+)
+
+# runway handler
+runway_handler = ConversationHandler(
+    entry_points=[CommandHandler("runway", readme)],
+    states={},
+    fallbacks=[],
+)
+
+bot_handler_map = {
+    "start": help_handler,
+    "help": help_handler,
+    "gpt": gpt_handler,
+    "deepseek": deepseek_handler,
+    "bytedance": bytedance_handler,
+    "sc": sc_net_handler,
+    "claude": claude_handler,
+    "gemini": gemini_handler,
+    "qwen": qwen_handler,
+    "wenxin": wenxin_handler,
+    "mj": midjourney_handler,
+    "sd": sd_handler,
+    "sora": sora_handler,
+    "runway": runway_handler,
+}
+
+app: Application | None = None
+
+
+# 处理群聊 @提及 信息
+async def mentioned(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    # 过滤非群聊消息
+    chat_type = update.message.chat.type
+    if chat_type not in ['group', 'supergroup']:
+        return
+    # 处理引用消息
+    refer = update.message.reply_to_message
+    if refer:
+        # user_of_refer = refer.from_user
+        # # 引用消息非同一人，忽略
+        # if user.id != user_of_refer.id:
+        #     print('not the same user, ignore')
+        #     return
+        print(user.full_name + ' use refer')
+        print('handle refer')
+        return
+
+    args = update.message.text.split(' ')
+    print(args)
+    # 过滤非指定机器人的消息
+    bot_name = context.bot.username
+    if len(args) == 0 or not args[0].startswith('@'+bot_name):
+        return
+
+    print(user.full_name + ' mention this bot')
+
+    if len(args[1:]) > 0:
+        cmd = args[1].replace('/', '', 1)
+        if cmd in bot_handler_map:
+            entries = bot_handler_map[cmd].entry_points
+            for entry in entries:
+                if await entry.callback(update, context):
+                    break
+
+
+
+# mention handler
+mention_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, mentioned)
+
+
 # main entrypoint
 def main() -> None:
-    """Run the bot."""
-    # Create the Application and pass it your token.
     token = os.environ.get('BOT_TOKEN')
     if token is None or token == "":
         print('BOT_TOKEN not found !')
         exit(1)
     application = Application.builder().token(token).build()
-
-    # start/help handler
-    help_handler = ConversationHandler(
-        entry_points=[CommandHandler("help", readme), CommandHandler("start", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # gpt handler
-    gpt_handler = ConversationHandler(
-        entry_points=[CommandHandler("gpt", chatgpt_start)],  # 开始
-        states={
-            CHECK_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
-                            MessageHandler(filters.TEXT, chatgpt_check_history)],
-            CONTINUE_LAST: [CommandHandler("cancel", chatgpt_cancel),
-                            MessageHandler(filters.TEXT, chatgpt_create_prompt)],
-            CHECK_MORE_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
-                                 MessageHandler(filters.TEXT, chatgpt_check_more_history)],
-            PRODUCE_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
-                              MessageHandler(filters.TEXT, chatgpt_produce_history)],
-            SELECT_HISTORY: [CommandHandler("cancel", chatgpt_cancel),
-                             MessageHandler(filters.TEXT, chatgpt_select_history)],
-            NEW_CHAT: [CommandHandler("cancel", chatgpt_cancel),
-                       MessageHandler(filters.TEXT, chatgpt_new_chat)],
-            SET_CHAT_NAME: [CommandHandler("cancel", chatgpt_cancel),
-                            MessageHandler(filters.TEXT, chatgpt_set_chat_name)],
-            SET_MODEL: [CommandHandler("cancel", chatgpt_cancel),
-                        MessageHandler(filters.TEXT, chatgpt_set_model)],
-            CREATE_PROMPT: [CommandHandler("cancel", chatgpt_cancel),
-                            MessageHandler(filters.TEXT, chatgpt_create_prompt)],
-            SEND_PROMPT_TEXT: [CommandHandler("cancel", chatgpt_cancel),
-                               MessageHandler(filters.TEXT, chatgpt_send_prompt_text)],
-        },
-        fallbacks=[],
-    )
-    # deepseek handler
-    deepseek_handler = ConversationHandler(
-        entry_points=[CommandHandler("deepseek", deepseek_start)],
-        states={
-            CHECK_HISTORY: [CommandHandler("cancel", deepseek_cancel),
-                            MessageHandler(filters.TEXT, deepseek_check_history)],
-            CONTINUE_LAST: [CommandHandler("cancel", deepseek_cancel),
-                            MessageHandler(filters.TEXT, deepseek_create_prompt)],
-            CHECK_MORE_HISTORY: [CommandHandler("cancel", deepseek_cancel),
-                                 MessageHandler(filters.TEXT, deepseek_check_more_history)],
-            PRODUCE_HISTORY: [CommandHandler("cancel", deepseek_cancel),
-                              MessageHandler(filters.TEXT, deepseek_produce_history)],
-            SELECT_HISTORY: [CommandHandler("cancel", deepseek_cancel),
-                             MessageHandler(filters.TEXT, deepseek_select_history)],
-            NEW_CHAT: [CommandHandler("cancel", deepseek_cancel),
-                       MessageHandler(filters.TEXT, deepseek_set_chat_name)],
-            SET_CHAT_NAME: [CommandHandler("cancel", deepseek_cancel),
-                            MessageHandler(filters.TEXT, deepseek_set_chat_name)],
-            SET_MODEL: [CommandHandler("cancel", deepseek_cancel),
-                        MessageHandler(filters.TEXT, deepseek_set_model)],
-            CREATE_PROMPT: [CommandHandler("cancel", deepseek_cancel),
-                            MessageHandler(filters.TEXT, deepseek_create_prompt)],
-            SEND_PROMPT_TEXT: [CommandHandler("cancel", deepseek_cancel),
-                               MessageHandler(filters.TEXT, deepseek_send_prompt_text)],
-        },
-        fallbacks=[],
-    )
-    # bytedance handler
-    bytedance_handler = ConversationHandler(
-        entry_points=[CommandHandler("bytedance", bytedance_start)],
-        states={
-            CHECK_HISTORY: [CommandHandler("cancel", bytedance_cancel),
-                            MessageHandler(filters.TEXT, bytedance_check_history)],
-            CONTINUE_LAST: [CommandHandler("cancel", bytedance_cancel),
-                            MessageHandler(filters.TEXT, bytedance_create_prompt)],
-            CHECK_MORE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
-                                 MessageHandler(filters.TEXT, bytedance_check_more_history)],
-            PRODUCE_HISTORY: [CommandHandler("cancel", bytedance_cancel),
-                              MessageHandler(filters.TEXT, bytedance_produce_history)],
-            SELECT_HISTORY: [CommandHandler("cancel", bytedance_cancel),
-                             MessageHandler(filters.TEXT, bytedance_select_history)],
-            NEW_CHAT: [CommandHandler("cancel", bytedance_cancel),
-                       MessageHandler(filters.TEXT, bytedance_set_chat_name)],
-            SET_CHAT_NAME: [CommandHandler("cancel", bytedance_cancel),
-                            MessageHandler(filters.TEXT, bytedance_set_chat_name)],
-            SET_MODEL: [CommandHandler("cancel", bytedance_cancel),
-                        MessageHandler(filters.TEXT, bytedance_set_model)],
-            CREATE_PROMPT: [CommandHandler("cancel", bytedance_cancel),
-                            MessageHandler(filters.TEXT, bytedance_create_prompt)],
-            SEND_PROMPT_TEXT: [CommandHandler("cancel", bytedance_cancel),
-                               MessageHandler(filters.TEXT, bytedance_send_prompt_text)],
-        },
-        fallbacks=[],
-    )
-    # sc net handler
-    sc_net_handler = ConversationHandler(
-        entry_points=[CommandHandler("sc", sc_net_start)],
-        states={
-            CHECK_HISTORY: [CommandHandler("cancel", sc_net_cancel),
-                            MessageHandler(filters.TEXT, sc_net_check_history)],
-            CONTINUE_LAST: [CommandHandler("cancel", sc_net_cancel),
-                            MessageHandler(filters.TEXT, sc_net_create_prompt)],
-            CHECK_MORE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
-                                 MessageHandler(filters.TEXT, sc_net_check_more_history)],
-            PRODUCE_HISTORY: [CommandHandler("cancel", sc_net_cancel),
-                              MessageHandler(filters.TEXT, sc_net_produce_history)],
-            SELECT_HISTORY: [CommandHandler("cancel", sc_net_cancel),
-                             MessageHandler(filters.TEXT, sc_net_select_history)],
-            NEW_CHAT: [CommandHandler("cancel", sc_net_cancel),
-                       MessageHandler(filters.TEXT, sc_net_set_chat_name)],
-            SET_CHAT_NAME: [CommandHandler("cancel", sc_net_cancel),
-                            MessageHandler(filters.TEXT, sc_net_set_chat_name)],
-            SET_MODEL: [CommandHandler("cancel", sc_net_cancel),
-                        MessageHandler(filters.TEXT, sc_net_set_model)],
-            CREATE_PROMPT: [CommandHandler("cancel", sc_net_cancel),
-                            MessageHandler(filters.TEXT, sc_net_create_prompt)],
-            SEND_PROMPT_TEXT: [CommandHandler("cancel", sc_net_cancel),
-                               MessageHandler(filters.TEXT, sc_net_send_prompt_text)],
-        },
-        fallbacks=[],
-    )
-    # claude handler
-    claude_handler = ConversationHandler(
-        entry_points=[CommandHandler("claude", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # gemini handler
-    gemini_handler = ConversationHandler(
-        entry_points=[CommandHandler("gemini", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # 通义千问 handler
-    qwen_handler = ConversationHandler(
-        entry_points=[CommandHandler("qwen", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # 文心一言 handler
-    wenxin_handler = ConversationHandler(
-        entry_points=[CommandHandler("wenxin", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # midjourney handler
-    midjourney_handler = ConversationHandler(
-        entry_points=[CommandHandler("mj", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # stable diffusion handler
-    sd_handler = ConversationHandler(
-        entry_points=[CommandHandler("sd", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # sora handler
-    sora_handler = ConversationHandler(
-        entry_points=[CommandHandler("sora", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # gork handler
-    gork_handler = ConversationHandler(
-        entry_points=[CommandHandler("gork", readme)],
-        states={},
-        fallbacks=[],
-    )
-    # runway handler
-    runway_handler = ConversationHandler(
-        entry_points=[CommandHandler("runway", readme)],
-        states={},
-        fallbacks=[],
-    )
 
     application.add_handler(help_handler)
     application.add_handler(gpt_handler)
@@ -1125,11 +1188,14 @@ def main() -> None:
     application.add_handler(qwen_handler)
     application.add_handler(wenxin_handler)
     application.add_handler(midjourney_handler)
-    application.add_handler(midjourney_handler)
     application.add_handler(sd_handler)
     application.add_handler(sora_handler)
     application.add_handler(gork_handler)
     application.add_handler(runway_handler)
+    application.add_handler(mention_handler)
+
+    global app
+    app = application
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)

@@ -1,9 +1,9 @@
 import datetime
-
 from model.db.t_base import Base
 from sqlalchemy import Column, Integer, DateTime, BigInteger, String
 
 
+# 会话表
 class TSession(Base):
     __tablename__ = 't_session'
 

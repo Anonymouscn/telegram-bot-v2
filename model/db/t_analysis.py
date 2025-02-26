@@ -2,7 +2,8 @@ from model.db.t_base import Base
 from sqlalchemy import Column, Integer, String, DateTime, BigInteger
 
 
-class TAnswer(Base):
+# 分析表
+class TAnalysis(Base):
     __tablename__ = 't_analysis'
 
     id = Column(BigInteger, primary_key=True)  # 回复 id

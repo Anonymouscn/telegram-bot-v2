@@ -1,6 +1,7 @@
 from typing import List
 
 
+# 对话内容
 class ChatContent:
     def __init__(self, t: str, text: str = None, image_url: str = None):
         self.t = t
@@ -15,6 +16,7 @@ class ChatContent:
         }
 
 
+# 对话消息
 class ChatMessage:
     def __init__(self, role: str, content: List[ChatContent] | str):
         self.role = role
@@ -33,6 +35,7 @@ class ChatMessage:
         }
 
 
+# 会话消息
 class SessionInfo:
     def __init__(self, id: int, name: str):
         self.id = id
