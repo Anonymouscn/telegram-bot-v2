@@ -22,7 +22,7 @@
   "create_prompt_placeholder": "选择模型",
   "server_error_reply": "服务器错误，请稍后重试。",
   "server_busy_or_error_reply": "服务器繁忙或错误，请稍后重试。",
-  "server_busy_or_error_prefix": "",
+  "server_busy_or_error_prefix": "服务器繁忙或错误: ",
   "no_model_found_reply": "找不到模型 【$model】，可以重新选择下面可用的模型试试噢!\n\n",
   "invalid_command_reply": "无效命令，请重新执行下面的命令试试呗:\n\n",
   "deepthink_prefix": "深度思考:\n> "
