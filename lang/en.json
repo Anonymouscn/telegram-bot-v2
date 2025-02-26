@@ -21,6 +21,9 @@
   "create_prompt_reply": "Hello, I'm【$model】, you can ask me a question or chat to me !\nSend /cancel to stop talking to me.",
   "create_prompt_placeholder": "select model",
   "server_error_reply": "Server error, please try again later.",
+  "server_busy_or_error_reply": "Server busy or error, please try again later.",
+  "server_busy_or_error_prefix": "Server busy or error: ",
   "no_model_found_reply": "The model [$model] cannot be found. You can reselect the available model below and try it!\n\n",
-  "invalid_command_reply": "Sorry, invalid command, please try the following command again:\n\n"
+  "invalid_command_reply": "Sorry, invalid command, please try the following command again:\n\n",
+  "deepthink_prefix": "deep thinking:\n> "
 }

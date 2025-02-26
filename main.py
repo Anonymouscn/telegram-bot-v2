@@ -13,14 +13,15 @@ Send /start to initiate the conversation.
 Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
+
 import asyncio
 import logging
 import os
 import re
 import numpy as np
+import telegramify_markdown
 from datetime import datetime, timedelta
 from typing import Callable, Awaitable
-from md2tgmd import escape
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, Message
 from telegram.error import BadRequest
 from telegram.ext import (
@@ -31,7 +32,6 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-
 from model.db.t_answer import TAnswer
 from model.db.t_question import TQuestion
 from model.db.t_session import TSession
@@ -688,6 +688,8 @@ async def deepseek_send_prompt_text(update: Update, context: ContextTypes.DEFAUL
 
 async def bytedance_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     def create_payload(messages: list, prompt: str, model: str) -> dict:
+        # 豆包模型型号特殊处理
+        model = model.replace('1-5', '1.5')
         messages.append({
             "role": "user",
             "content": prompt
@@ -699,6 +701,9 @@ async def bytedance_send_prompt_text(update: Update, context: ContextTypes.DEFAU
                 "messages": messages,
             }
         }
+        # deepseek 强制 Markdown 格式输出
+        if "deepseek" in model:
+            payload["model_payload"]["format"] = "markdown"
         return payload
 
     return await send_prompt_text(update, context, 'ByteDance', 'default', create_payload)
@@ -734,7 +739,6 @@ async def save_stream_answer(session_id, question_id, content, state: Value):
                 content=content,
             )
             batch_save_answer([answer])
-            print('saved content')
 
 
 # 发送响应 chunk 片段回调检查
@@ -748,12 +752,36 @@ async def send_reply_chunk_cb(update: Update, context: ContextTypes.DEFAULT_TYPE
         await send_reply_chunk(update, context, state, lock, save)
 
 
+# 处理获取响应错误
+async def handle_reply_error(update: Update, context: ContextTypes.DEFAULT_TYPE, state, error, lock):
+    with lock.get_lock():
+        if lock.value == 0:
+            lock.value += 1
+            user = update.message.from_user
+            content = get_with_lang('server_busy_or_error_reply', user.language_code)
+            session_id = state['session_id']
+            question_id = state['question_id']
+            asyncio.create_task(save_stream_answer(session_id, question_id, content, Value('i', 0)))
+            if 'message' in error:
+                content = get_with_lang('server_busy_or_error_prefix', user.language_code) + error['message']
+            render_content: str = telegramify_markdown.markdownify(
+                content,
+                max_line_length=None,
+                normalize_whitespace=False
+            )
+            await update.message.reply_text(
+                render_content,
+                parse_mode="MarkdownV2",
+            )
+
+
 # 发送响应 chunk 片段
 async def send_reply_chunk(update: Update, context: ContextTypes.DEFAULT_TYPE,
                            state: dict, lock: asyncio.Lock, save: Value):
     # 锁退避 (只有上锁成功才执行)
     if await lock.acquire():
         try:
+            # 输出限流窗口检测
             if state['last_update'] is not None and (state['finish'] is None or not state['finish']):
                 now = datetime.now()
                 limit: datetime = state['last_update'] + state['limit_window']
@@ -761,7 +789,7 @@ async def send_reply_chunk(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     print('hit limit window, ignore')
                     return
             state['last_update'] = datetime.now()
-
+            # 获取对话元数据
             chat_id = update.effective_chat.id
             send_msg: Message = state['send_msg']
             content = state['content']
@@ -790,8 +818,12 @@ async def send_reply_chunk(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     state['send_msg'] = await context.bot.send_message(chat_id, text=content)
                 else:
                     if state['save'] != state['content']:
-
-                        render_content: str = escape(state['content'])
+                        # 更新使用 telegram_markdown 解析包转义 markdown 到 markdownV2
+                        render_content: str = telegramify_markdown.markdownify(
+                            state['content'],
+                            max_line_length=None,
+                            normalize_whitespace=False
+                        )
                         if len(render_content) < 4096:
                             try:
                                 await send_msg.edit_text(
@@ -871,11 +903,6 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
     if latest_question is not None:
         save_in_dict_chain(cursor, latest_question.id, [user.id, factory, 'parent_id'])
     payload = fn(messages, prompt, model)
-    # 发起普通请求
-    # result = requests.post(
-    #     url="http://192.168.2.70:8080/service/model/chat",
-    #     data=json.dumps(payload)
-    # ).json()
     # 发起流方式请求
     payload['stream'] = True
     print(payload)
@@ -883,6 +910,7 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
         target="http://192.168.2.70:8080/service/model/chat",
         body=payload,
         on_receive=send_reply_chunk,
+        on_error=handle_reply_error,
         update=update,
         context=context,
         state={
@@ -905,47 +933,6 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
         },
         save_lock=Value('i', 0),
     )
-
-    # response = get_with_lang('server_error_reply', user.language_code)
-    # if result is None or result['data'] is None:
-    #     print('error result: ', result)
-    #     response = get_with_lang('server_error_reply', user.language_code)
-    # else:
-    #     if result['data']['choices'] is not None and len(result['data']['choices']) > 0:
-    #         response = result['data']['choices'][0]['message']['content']
-    # current_answer = TAnswer(
-    #     session_id=session_id,
-    #     question_id=latest_question.id,
-    #     type=0,
-    #     content=response,
-    # )
-    # batch_save_answer([current_answer])
-    # response_data = escape(response)
-    # max_len = 4096
-    # if len(response_data) > max_len:
-    #     for x in range(0, len(response_data), max_len):
-    #         await update.message.reply_text(
-    #             response_data[x:x + max_len],
-    #             reply_markup=ReplyKeyboardMarkup(
-    #                 [['/cancel']],
-    #                 resize_keyboard=True,
-    #                 is_persistent=True,
-    #                 one_time_keyboard=True,
-    #                 input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
-    #             ),
-    #         )
-    # else:
-    #     await update.message.reply_text(
-    #         escape(response),
-    #         parse_mode="MarkdownV2",
-    #         reply_markup=ReplyKeyboardMarkup(
-    #             [['/cancel']],
-    #             resize_keyboard=True,
-    #             is_persistent=True,
-    #             one_time_keyboard=True,
-    #             input_field_placeholder=get_with_lang('chat_placeholder', user.language_code)
-    #         ),
-    #     )
     return SEND_PROMPT_TEXT
 
 
