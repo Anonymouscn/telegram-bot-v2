@@ -20,4 +20,4 @@ soupsieve==2.6
 SQLAlchemy==2.0.37
 typing_extensions==4.12.2
 urllib3==2.3.0
-telegramify-markdown=0.4.2
+telegramify-markdown==0.4.2
