@@ -897,7 +897,7 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
     payload['stream'] = True
     print(payload)
     await stream_events(
-        target="http://192.168.2.70:8080/service/model/chat",
+        target="http://docker-prod-1:8080/service/model/chat",
         body=payload,
         on_receive=send_reply_chunk,
         on_error=handle_reply_error,
