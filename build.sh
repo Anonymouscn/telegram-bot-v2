@@ -18,7 +18,7 @@ done < "$env_file"
 # 输出确认已设置的环境变量
 echo "环境变量已设置"
 
-docker build \
+docker buildx build --platform linux/amd64,linux/arm64 \
 --build-arg BOT_TOKEN="$BOT_TOKEN" \
 --build-arg TELEGRAM_DB_HOST="$TELEGRAM_DB_HOST" \
 --build-arg TELEGRAM_DB_PORT="$TELEGRAM_DB_PORT" \
@@ -29,6 +29,6 @@ docker build \
 --build-arg TELEGRAM_DB_CORE_POOL_SIZE="$TELEGRAM_DB_CORE_POOL_SIZE" \
 --build-arg TELEGRAM_DB_MAX_POOL_SIZE="$TELEGRAM_DB_MAX_POOL_SIZE" \
 --no-cache \
--t $app_name .
+-t pgl888999/telegram-bot-v2 --push .
 
-docker run -it --rm $app_name
+docker run -it --rm pgl888999/telegram-bot-v2
