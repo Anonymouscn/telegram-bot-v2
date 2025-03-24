@@ -21,4 +21,4 @@ if __name__ == "__main__":
         print('receive: ', data)
 
 
-    stream_events(url, payload, on_receive)
+    # stream_events(url, payload, on_receive, )

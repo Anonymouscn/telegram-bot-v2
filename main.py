@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import re
-import numpy as np
 import telegramify_markdown
 from datetime import datetime, timedelta
 from typing import Callable, Awaitable
@@ -31,6 +30,7 @@ from module.repo.chat.session_repo import batch_get_session_in_user_collection, 
     get_session_id_by_name, count_user_sessions, get_session_by_name, get_last_session, is_exist_session
 from module.repo.user.user_repo import batch_save_or_update
 from provider.db import init_db
+from util.array_util import reshape_options
 from util.dict_util import save_in_dict_chain
 from util.lang_util import init_lang, get_with_lang
 from util.value_util import set_or_default
@@ -70,6 +70,10 @@ async def sc_net_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
 async def bytedance_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await cancel(update, context, 'ByteDance')
+
+
+async def claude_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await cancel(update, context, 'Claude')
 
 
 # 取消操作
@@ -134,6 +138,10 @@ async def bytedance_start(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def sc_net_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await chat_start(update, context, 'SCNet')
+
+
+async def claude_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await chat_start(update, context, 'Claude')
 
 
 # 开始切点
@@ -202,6 +210,10 @@ async def bytedance_check_history(update: Update, context: ContextTypes.DEFAULT_
 
 async def sc_net_check_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await check_history(update, context, 'SCNet')
+
+
+async def claude_check_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_history(update, context, 'Claude')
 
 
 # gpt 检查历史
@@ -283,6 +295,10 @@ async def sc_net_produce_history(update: Update, context: ContextTypes.DEFAULT_T
     return await produce_history(update, context, 'SCNet')
 
 
+async def claude_produce_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await produce_history(update, context, 'Claude')
+
+
 async def produce_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     user = update.message.from_user
     raw = update.message.text
@@ -340,6 +356,10 @@ async def sc_net_check_more_history(update: Update, context: ContextTypes.DEFAUL
     return await check_more_history(update, context, 'SCNet')
 
 
+async def claude_check_more_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await check_more_history(update, context, 'Claude')
+
+
 async def check_more_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     cmd = update.message.text
     user = update.message.from_user
@@ -364,6 +384,10 @@ async def bytedance_set_chat_name(update: Update, context: ContextTypes.DEFAULT_
 
 async def sc_net_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await set_chat_name(update, context, 'SCNet', sc_net_new_chat)
+
+
+async def claude_set_chat_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_chat_name(update, context, 'Claude', claude_new_chat)
 
 
 # 设置聊天名
@@ -437,7 +461,12 @@ async def chatgpt_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return await new_chat(
         update,
         context,
-        ['/o1_preview', '/o1_mini', '/gpt_4o', '/gpt_4o_mini', '/gpt_3_5_turbo', '/gpt_3_5_turbo_16k'],
+        [
+            '/gpt_4_5', '/o1_preview',
+            '/o1_mini', '/gpt_4o',
+            '/gpt_4o_mini', '/gpt_3_5_turbo',
+            '/gpt_3_5_turbo_16k'
+        ],
         'ChatGPT'
     )
 
@@ -462,6 +491,19 @@ async def bytedance_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def sc_net_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await new_chat(update, context, ['/DeepSeek_R1_Distill_Qwen_32B'], 'SCNet')
+
+
+async def claude_new_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await new_chat(
+        update,
+        context,
+        [
+            '/claude_3_7_sonnet', '/claude_3_5_sonnet',
+            '/claude_3_5_haiku', '/claude_3_haiku',
+            '/claude_3_opus'
+        ],
+        'Claude'
+    )
 
 
 # gpt 新建聊天
@@ -506,6 +548,10 @@ async def sc_net_select_history(update: Update, context: ContextTypes.DEFAULT_TY
     return await select_history(update, context, 'SCNet')
 
 
+async def claude_select_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await select_history(update, context, 'Claude')
+
+
 async def select_history(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     session = update.message.text.replace("/", "")
     user = update.message.from_user
@@ -544,26 +590,26 @@ async def sc_net_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return await set_model(update, context, 'SCNet', sc_net_create_prompt)
 
 
+async def claude_set_model(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await set_model(update, context, 'Claude', claude_create_prompt)
+
+
 async def set_model(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str,
                     next_step: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[int]]) -> int:
     user = update.message.from_user
     model = update.message.text
     selectable_models = list(cursor[user.id][factory]['selectable_models'])
     if model not in cursor[user.id][factory]['selectable_models']:
-        tips = (
-            get_with_lang('no_model_found_reply', user.language_code).
-            replace('$model', model).
-            replace('/', '').
-            # gpt: 3_5 -> 3.5
-            replace('3_5', '3.5').
-            replace('_', '-')
-        )
+        text = get_with_lang('no_model_found_reply', user.language_code)
+        tips = generate_info_default(text, model)
+        if factory == 'Claude':
+            tips = generate_info_claude(text, model)
         for m in selectable_models:
             tips += (m + '\n')
         await update.message.reply_text(
             tips,
             reply_markup=ReplyKeyboardMarkup(
-                keyboard=np.array(selectable_models).reshape(-1, 2),
+                keyboard=reshape_options(selectable_models),
                 resize_keyboard=True,
                 is_persistent=True,
                 one_time_keyboard=True,
@@ -572,6 +618,33 @@ async def set_model(update: Update, context: ContextTypes.DEFAULT_TYPE, factory:
         )
         return SET_MODEL
     return await next_step(update, context)
+
+
+def generate_info_default(info, model) -> str:
+    return (
+        info.
+        replace('$model', model).
+        replace('/', '').
+        # 小版本适配: x_5 -> x.5
+        replace('_5', '.5').
+        replace('_', '-').
+        # gpt 4.5 适配
+        replace('gpt-4.5', 'gpt-4.5-preview-2025-02-27')
+    )
+
+
+def generate_info_claude(info, model) -> str:
+    return (
+        info.
+        replace('$model', model).
+        replace('/', '').
+        replace('_', '-').
+        replace('claude-3-7-sonnet', 'claude-3-7-sonnet-20250219').
+        replace('claude-3-5-sonnet', 'claude-3-5-sonnet-20241022').
+        replace('claude-3-5-haiku', 'claude-3-5-haiku-20241022').
+        replace('claude-3-haiku', 'claude-3-haiku-20240307').
+        replace('claude-3-opus', 'claude-3-opus-20240229')
+    )
 
 
 async def chatgpt_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -590,15 +663,15 @@ async def sc_net_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYP
     return await create_prompt(update, context, 'SCNet')
 
 
+async def claude_create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    return await create_prompt(update, context, 'Claude')
+
+
 async def create_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE, factory: str) -> int:
     user = update.message.from_user
-    model = (
-        update.message.text.
-        replace("/", "").
-        # gpt: 3_5 -> 3.5
-        replace('3_5', '3.5').
-        replace("_", "-")
-    )
+    model = generate_info_default(update.message.text, "")
+    if factory == 'Claude':
+        model = generate_info_claude(update.message.text, "")
     # 保存当前使用模型名称
     save_in_dict_chain(
         cursor,
@@ -715,6 +788,24 @@ async def sc_net_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_
         return payload
 
     return await send_prompt_text(update, context, 'SCNet', 'default', create_payload)
+
+
+async def claude_send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    def create_payload(messages: list, prompt: str, model: str) -> dict:
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+        payload = {
+            "model_factory": "claude",
+            "model_payload": {
+                "model": model,
+                "messages": messages,
+            }
+        }
+        return payload
+
+    return await send_prompt_text(update, context, 'Claude', 'default', create_payload)
 
 
 # 保存事件流回复
@@ -920,6 +1011,8 @@ async def send_prompt_text(update: Update, context: ContextTypes.DEFAULT_TYPE, f
             'session_id': session_id,
             # 问题 id
             'question_id': latest_question.id,
+            # 工厂
+            'factory': factory,
         },
         save_lock=Value('i', 0),
     )
@@ -1047,8 +1140,29 @@ sc_net_handler = ConversationHandler(
 
 # claude handler
 claude_handler = ConversationHandler(
-    entry_points=[CommandHandler("claude", readme)],
-    states={},
+    entry_points=[CommandHandler("claude", claude_start)],
+    states={
+        CHECK_HISTORY: [CommandHandler("cancel", claude_cancel),
+                        MessageHandler(filters.TEXT, claude_check_history)],
+        CONTINUE_LAST: [CommandHandler("cancel", claude_cancel),
+                        MessageHandler(filters.TEXT, claude_create_prompt)],
+        CHECK_MORE_HISTORY: [CommandHandler("cancel", claude_cancel),
+                             MessageHandler(filters.TEXT, claude_check_more_history)],
+        PRODUCE_HISTORY: [CommandHandler("cancel", claude_cancel),
+                          MessageHandler(filters.TEXT, claude_produce_history)],
+        SELECT_HISTORY: [CommandHandler("cancel", claude_cancel),
+                         MessageHandler(filters.TEXT, claude_select_history)],
+        NEW_CHAT: [CommandHandler("cancel", claude_cancel),
+                   MessageHandler(filters.TEXT, claude_set_chat_name)],
+        SET_CHAT_NAME: [CommandHandler("cancel", claude_cancel),
+                        MessageHandler(filters.TEXT, claude_set_chat_name)],
+        SET_MODEL: [CommandHandler("cancel", claude_cancel),
+                    MessageHandler(filters.TEXT, claude_set_model)],
+        CREATE_PROMPT: [CommandHandler("cancel", claude_cancel),
+                        MessageHandler(filters.TEXT, claude_create_prompt)],
+        SEND_PROMPT_TEXT: [CommandHandler("cancel", claude_cancel),
+                           MessageHandler(filters.TEXT, claude_send_prompt_text)],
+    },
     fallbacks=[],
 )
 
