@@ -31,4 +31,4 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 --no-cache \
 -t pgl888999/telegram-bot-v2 --push .
 
-docker run -it --rm pgl888999/telegram-bot-v2
+# docker run -it --rm pgl888999/telegram-bot-v2

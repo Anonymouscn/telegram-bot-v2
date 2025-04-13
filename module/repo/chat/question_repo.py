@@ -21,7 +21,8 @@ def save_question(question: TQuestion):
     try:
         session.add(question)
         session.commit()
-        result = session.query(TQuestion).filter(TQuestion.session_id == question.session_id).order_by(desc(TQuestion.id)).first()
+        result = session.query(TQuestion).filter(TQuestion.session_id == question.session_id,
+                                                 TQuestion.is_deleted == 0).order_by(desc(TQuestion.id)).first()
         return result
     finally:
         if session is not None:
@@ -34,7 +35,7 @@ def batch_get_question_in_session_collection(session_id_list: List[int]) -> list
         condition = TQuestion.session_id.in_(session_id_list)
         if len(session_id_list) == 1:
             condition = TQuestion.session_id == session_id_list[0]
-        session_list = session.query(TQuestion).filter(condition).all()
+        session_list = session.query(TQuestion).filter(condition, TQuestion.is_deleted == 0).all()
         return session_list
     finally:
         if session is not None:
@@ -44,7 +45,8 @@ def batch_get_question_in_session_collection(session_id_list: List[int]) -> list
 def get_latest_question(session_id: int):
     session = TelegramBotDBManager.borrow_session()
     try:
-        return session.query(TQuestion).filter(TQuestion.session_id == session_id).order_by(desc(TQuestion.id)).first()
+        return session.query(TQuestion).filter(TQuestion.session_id == session_id, TQuestion.is_deleted == 0).order_by(
+            desc(TQuestion.id)).first()
     finally:
         if session is not None:
             TelegramBotDBManager.return_session(session)

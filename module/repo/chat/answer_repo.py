@@ -19,7 +19,7 @@ def batch_get_answer_in_session_collection(session_id_list: List[int]) -> list[T
     if len(session_id_list) == 1:
         condition = TAnswer.session_id == session_id_list[0]
     try:
-        answer_list = session.query(TAnswer).filter(condition).all()
+        answer_list = session.query(TAnswer).filter(condition, TAnswer.is_deleted == 0).all()
         return answer_list
     finally:
         if session is not None:

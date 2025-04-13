@@ -6,6 +6,8 @@ import asyncio
 import logging
 import os
 import re
+import sys
+
 import telegramify_markdown
 from datetime import datetime, timedelta
 from typing import Callable, Awaitable
@@ -880,14 +882,18 @@ async def send_reply_chunk(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     state['send_msg'] = await context.bot.send_message(chat_id, text=content)
                 else:
                     if state['save'] != state['content']:
+                        msg = state['content']
+                        # 限制消息最大字符数为 4096
+                        if len(msg) > 4096:
+                            msg = msg[-4096:]
+                        # 限制消息大小为 512 字节以内
+                        while sys.getsizeof(msg) >= 512 and len(msg) > 0:
+                            msg = msg[:-100]
                         try:
-                            if len(state['content']) < 4096:
-                                await send_msg.edit_text(state['content'])
-                            else:
-                                await send_msg.edit_text(state['content'][-4096:])
+                            await send_msg.edit_text(msg)
                         except BadRequest as e:
                             if "specified new message content and reply markup are exactly the same as a current content" not in e.message:
-                                print('error on edit message: ', e.message)
+                                print('error on edit message:', e.message)
                         state['save'] = state['content']
                 if not state['finish']:
                     asyncio.create_task(send_reply_chunk_cb(update, context, state, lock, save))
